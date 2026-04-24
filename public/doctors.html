@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Doctors</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f0f4f8; }
+    .navbar { background: #2c3e50; color: white; padding: 15px 30px; font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .navbar a { color: white; text-decoration: none; font-size: 14px; }
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+    .card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { color: #2c3e50; margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; color: #555; font-size: 14px; }
+    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    button { background: #2ecc71; color: white; padding: 10px 25px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
+    button:hover { background: #27ae60; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #2c3e50; color: white; padding: 12px; text-align: left; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    tr:hover { background: #f9f9f9; }
+    .btn-delete { background: #e74c3c; color: white; padding: 5px 12px; font-size: 13px; border-radius: 4px; border: none; cursor: pointer; }
+    .msg { padding: 10px; border-radius: 6px; margin-bottom: 15px; display: none; }
+    .success { background: #d4edda; color: #155724; display: block; }
+    .error { background: #f8d7da; color: #721c24; display: block; }
+  </style>
+</head>
+<body>
+  <div class="navbar">🏥 Hospital Management <a href="/">← Dashboard</a></div>
+  <div class="container">
+    <div class="card">
+      <h2>Add New Doctor</h2>
+      <div id="msg" class="msg"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label><input type="text" id="name" placeholder="Doctor name" /></div>
+        <div class="form-group"><label>Specialization</label><input type="text" id="specialization" placeholder="e.g. Cardiologist" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Phone</label><input type="text" id="phone" placeholder="Phone number" /></div>
+        <div class="form-group"><label>Email</label><input type="email" id="email" placeholder="Email address" /></div>
+      </div>
+      <button onclick="addDoctor()">+ Add Doctor</button>
+    </div>
+    <div class="card">
+      <h2>All Doctors</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Specialization</th><th>Phone</th><th>Email</th><th>Action</th></tr></thead>
+        <tbody id="doctorTable"><tr><td colspan="6" style="text-align:center">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    async function loadDoctors() {
+      const res = await fetch('/doctors');
+      const data = await res.json();
+      const tbody = document.getElementById('doctorTable');
+      if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No doctors found</td></tr>'; return; }
+      tbody.innerHTML = data.map(d => `<tr><td>${d.doctor_id}</td><td>${d.name}</td><td>${d.specialization}</td><td>${d.phone}</td><td>${d.email}</td><td><button class="btn-delete" onclick="deleteDoctor(${d.doctor_id})">Delete</button></td></tr>`).join('');
+    }
+    async function addDoctor() {
+      const name = document.getElementById('name').value;
+      const specialization = document.getElementById('specialization').value;
+      const phone = document.getElementById('phone').value;
+      const email = document.getElementById('email').value;
+      const msg = document.getElementById('msg');
+      if (!name || !specialization || !phone) { msg.className = 'msg error'; msg.textContent = '❌ Fill all fields!'; return; }
+      await fetch('/doctors/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, specialization, phone, email }) });
+      msg.className = 'msg success'; msg.textContent = '✅ Doctor added!';
+      loadDoctors();
+    }
+    async function deleteDoctor(id) {
+      if (!confirm('Delete this doctor?')) return;
+      await fetch(`/doctors/delete/${id}`, { method: 'DELETE' });
+      loadDoctors();
+    }
+    loadDoctors();
+  </script>
+</body>
+</html>

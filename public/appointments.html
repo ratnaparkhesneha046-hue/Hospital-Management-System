@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Appointments</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f0f4f8; }
+    .navbar { background: #2c3e50; color: white; padding: 15px 30px; font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .navbar a { color: white; text-decoration: none; font-size: 14px; }
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+    .card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { color: #2c3e50; margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; color: #555; font-size: 14px; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    button { background: #e67e22; color: white; padding: 10px 25px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
+    button:hover { background: #d35400; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #2c3e50; color: white; padding: 12px; text-align: left; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    tr:hover { background: #f9f9f9; }
+    .btn-delete { background: #e74c3c; color: white; padding: 5px 12px; font-size: 13px; border-radius: 4px; border: none; cursor: pointer; }
+    .msg { padding: 10px; border-radius: 6px; margin-bottom: 15px; display: none; }
+    .success { background: #d4edda; color: #155724; display: block; }
+    .error { background: #f8d7da; color: #721c24; display: block; }
+  </style>
+</head>
+<body>
+  <div class="navbar">🏥 Hospital Management <a href="/">← Dashboard</a></div>
+  <div class="container">
+    <div class="card">
+      <h2>Book Appointment</h2>
+      <div id="msg" class="msg"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Patient</label>
+          <select id="patient_id"><option value="">Select Patient</option></select>
+        </div>
+        <div class="form-group"><label>Doctor</label>
+          <select id="doctor_id"><option value="">Select Doctor</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Appointment Date</label><input type="date" id="appointment_date" /></div>
+      <button onclick="addAppointment()">+ Book Appointment</button>
+    </div>
+    <div class="card">
+      <h2>All Appointments</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="appointmentTable"><tr><td colspan="6" style="text-align:center">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    async function loadDropdowns() {
+      const [patients, doctors] = await Promise.all([
+        fetch('/patients').then(r => r.json()),
+        fetch('/doctors').then(r => r.json())
+      ]);
+      document.getElementById('patient_id').innerHTML = '<option value="">Select Patient</option>' + patients.map(p => `<option value="${p.patient_id}">${p.name}</option>`).join('');
+      document.getElementById('doctor_id').innerHTML = '<option value="">Select Doctor</option>' + doctors.map(d => `<option value="${d.doctor_id}">${d.name}</option>`).join('');
+    }
+    async function loadAppointments() {
+      const res = await fetch('/appointments');
+      const data = await res.json();
+      const tbody = document.getElementById('appointmentTable');
+      if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No appointments found</td></tr>'; return; }
+      tbody.innerHTML = data.map(a => `<tr><td>${a.appointment_id}</td><td>${a.patient}</td><td>${a.doctor}</td><td>${a.appointment_date?.split('T')[0]}</td><td>${a.status}</td><td><button class="btn-delete" onclick="deleteAppointment(${a.appointment_id})">Delete</button></td></tr>`).join('');
+    }
+    async function addAppointment() {
+      const patient_id = document.getElementById('patient_id').value;
+      const doctor_id = document.getElementById('doctor_id').value;
+      const appointment_date = document.getElementById('appointment_date').value;
+      const msg = document.getElementById('msg');
+      if (!patient_id || !doctor_id || !appointment_date) { msg.className = 'msg error'; msg.textContent = '❌ Fill all fields!'; return; }
+      await fetch('/appointments/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patient_id, doctor_id, appointment_date }) });
+      msg.className = 'msg success'; msg.textContent = '✅ Appointment booked!';
+      loadAppointments();
+    }
+    async function deleteAppointment(id) {
+      if (!confirm('Delete this appointment?')) return;
+      await fetch(`/appointments/delete/${id}`, { method: 'DELETE' });
+      loadAppointments();
+    }
+    loadDropdowns();
+    loadAppointments();
+  </script>
+</body>
+</html>
