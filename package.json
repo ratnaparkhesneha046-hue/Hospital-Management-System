@@ -1,8 +1,11 @@
 {
-  "name": "Sneha",
-  "age": 20,
-  "gender": "Female",
-  "disease": "Fever",
+  "name": "hospital-management",
+  "version": "1.0.0",
+  "description": "Hospital Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
