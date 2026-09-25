@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// Get all patients
+
 router.get('/', (req, res) => {
   db.query('SELECT * FROM patients', (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -10,7 +10,6 @@ router.get('/', (req, res) => {
   });
 });
 
-// Add new patient
 router.post('/add', (req, res) => {
   const { name, age, gender, phone, address } = req.body;
   db.query(
@@ -23,7 +22,7 @@ router.post('/add', (req, res) => {
   );
 });
 
-// Delete patient
+
 router.delete('/delete/:id', (req, res) => {
   db.query('DELETE FROM patients WHERE patient_id = ?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
